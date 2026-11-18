@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio North month by month</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#1f2a2a;--muted:#5d6b6b;--line:#dcd9d0;--obs:#1b6e5a;--fc:#7a4ea3;--warn:#b0413e;--spend:#c9822b;--contrib:#2f6db3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,"Segoe UI",Arial,sans-serif}
+header{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);padding:12px 20px;z-index:5}
+h1{font-size:18px;margin:0 0 6px}h2{font-size:15px;margin:0 0 8px}h3{font-size:13.5px;margin:12px 0 6px}
+main{padding:16px 20px;max-width:1500px;margin:auto}
+.ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ctl button{border:1px solid var(--line);background:var(--card);padding:6px 12px;border-radius:6px;cursor:pointer;font:inherit;color:var(--ink)}
+.ctl input[type=range]{flex:1;min-width:200px}.month{font-size:20px;font-weight:700;color:var(--obs);min-width:92px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:16px;overflow-x:auto}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:0 16px}@media(min-width:1150px){.grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.grid>div{min-width:0}svg{display:block;max-width:100%}
+table{border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{padding:3px 7px;text-align:right;white-space:nowrap}
+th{font-weight:600;color:var(--muted);border-bottom:1px solid var(--line)}td:first-child,th:first-child{text-align:left}
+.tri td{min-width:30px;text-align:center;padding:2px 3px;font-size:12px}.tri th{font-size:11.5px;text-align:center}
+.note{color:var(--muted);font-size:12.5px;margin:6px 0 0}.fc{color:var(--fc);font-style:italic}
+.pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;border:1px solid var(--line)}
+.ok{background:#e3f1ec;border-color:#b9dccf}.no{background:#f7e4e3;border-color:#e6bcba}.fcst{background:#efe7f6;border-color:#d5c3e6}
+.bar{display:flex;height:14px;border-radius:3px;overflow:hidden;min-width:220px}.bar span{display:block}
+.legend{font-size:12.5px;margin:4px 0}.legend span{display:inline-flex;align-items:center;gap:5px;margin-right:14px}.legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
+.answer{border-left:4px solid var(--obs)}.neg{color:var(--warn)}svg text{font-family:inherit}
+.kpis{display:flex;gap:12px;flex-wrap:wrap}.kpi{border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-width:150px}
+.kpi b{display:block;font-size:19px}.kpi span{color:var(--muted);font-size:12px}
+</style></head><body>
+<header><h1>Studio North, replayed one month at a time</h1>
+<div class="ctl"><button id="prev">&larr; Previous</button><span class="month" id="label"></span><button id="next">Next &rarr;</button>
+<input type="range" id="slider" min="0" value="0" aria-label="As-of month"><button id="play">Play</button></div>
+<div class="note" id="status"></div></header>
+<main>
+<div class="card answer" id="answers"></div>
+<div class="card"><h2>Company at a glance</h2><div class="kpis" id="kpis"></div></div>
+<div class="grid"><div>
+<div class="card"><h2>Company trajectory by calendar month</h2><div class="legend"><span><i style="background:var(--obs)"></i>Net revenue</span><span><i style="background:var(--contrib)"></i>Contribution</span><span><i style="background:var(--spend)"></i>Acquisition spend</span></div><div id="company"></div>
+<p class="note">Observed only. Contribution is net revenue minus variable costs, before acquisition spend. Axes are fixed so the curve grows as months advance.</p></div>
+<div class="card"><h2>12-month value versus CAC, by joining cohort</h2><div class="legend"><span><i style="background:var(--obs)"></i>Observed value</span><span><i style="background:#cdb8e3;border:1px dashed var(--fc)"></i>Forecast value</span><span><i style="background:#222;height:3px"></i>CAC</span></div><div id="valuechart"></div>
+<p class="note">Value = 12 monthly receipts of contribution per acquired customer, discounted 1% a month, before CAC (the report's definition). The forecast part comes from the report's model refitted on records through the as-of month.</p></div>
+<div class="card"><h2>Cohort economics</h2><div id="econ"></div>
+<p class="note">Plain figures are observed. <span class="fc">Purple italic figures include forecast months.</span> CAC = all acquisition spend in the joining month ÷ customers acquired. Payback = the receipt month in which cumulative undiscounted contribution covers that spend.</p></div>
+</div><div>
+<div class="card"><h2>Retention: % of each joining cohort still paying</h2><div id="retention"></div>
+<p class="note">Rows are joining cohorts; columns are months since joining (0 = first paid month). Months that had not happened yet are blank, not zero.</p></div>
+<div class="card"><h2>Revenue: net revenue per acquired customer, by month since joining ($)</h2><div id="revenue"></div>
+<p class="note">Observed. Divided by the original customers acquired, so it reflects both churn and spending per member.</p></div>
+<div class="card"><h2>Who joined: channel-by-need mix</h2><div class="legend" id="mixlegend"></div><div id="mix"></div></div>
+<div class="card"><h2>Acquisition decision check</h2><div id="decision"></div></div>
+</div></div>
+<div class="grid"><div class="card"><h2>How earlier forecasts held up</h2><div id="track"></div></div>
+<div class="card"><h2>Reconciliation to the original report and checks</h2><div id="checks"></div></div></div>
+</main>
+<script>
+const DATA=__DATA__, META=__META__, C=META.colors, SEGS=META.segments, N=DATA.length;
+const MONTHS=DATA.map(d=>d.month), FINAL=DATA[N-1];
+let i=0, timer=null; const $=id=>document.getElementById(id);
+const f0=x=>x==null?'':Math.round(x).toLocaleString(), f2=x=>x==null?'':x.toFixed(2), d0=x=>x==null?'':'$'+Math.round(x).toLocaleString();
+const pct=x=>x==null?'':(100*x).toFixed(0)+'%';
+function heat(v,max){const a=Math.max(0,Math.min(1,v/max));return `background:rgba(27,110,90,${(0.07+0.58*a).toFixed(2)});color:${a>0.7?'#fff':'#1f2a2a'}`}
+function triangle(obj,cohorts,max,fmt){const ages=Math.max(...cohorts.map(c=>obj[c].length));
+ let t='<table class="tri"><tr><th>Cohort</th>'+Array.from({length:ages},(_,a)=>`<th>${a}</th>`).join('')+'</tr>';
+ for(const c of cohorts){t+=`<tr><td>${c}</td>`+Array.from({length:ages},(_,a)=>obj[c][a]==null?'<td></td>':`<td style="${heat(obj[c][a],max)}">${fmt(obj[c][a])}</td>`).join('')+'</tr>'}
+ return t+'</table>'}
+const COMP_MAX=Math.max(...FINAL.company.map(r=>Math.max(r.net_revenue,r.acquisition_spend)))*1.08;
+function companyChart(d){const W=640,H=230,L=58,R=10,T=10,B=34,w=W-L-R,h=H-T-B,x=k=>L+w*k/(N-1),y=v=>T+h*(1-v/COMP_MAX);
+ let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Company monthly net revenue, contribution and acquisition spend">`;
+ for(let g=0;g<=4;g++){const v=COMP_MAX*g/4;s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#e8e5dc"/><text x="${L-6}" y="${y(v)+4}" font-size="10.5" text-anchor="end" fill="#5d6b6b">$${Math.round(v/1000)}k</text>`}
+ MONTHS.forEach((m,k)=>{if(k%3===0)s+=`<text x="${x(k)}" y="${H-14}" font-size="10.5" text-anchor="middle" fill="#5d6b6b">${m}</text>`});
+ s+=`<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${T+h}" stroke="#1b6e5a" stroke-dasharray="3 3"/>`;
+ for(const [k,col] of [['net_revenue','var(--obs)'],['contribution','var(--contrib)'],['acquisition_spend','var(--spend)']]){
+  const pts=d.company.map((r,j)=>`${x(j)},${y(r[k])}`).join(' ');s+=`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.2"/>`;
+  const last=d.company[d.company.length-1];s+=`<circle cx="${x(d.company.length-1)}" cy="${y(last[k])}" r="3.2" fill="${col}"/>`}
+ return s+'</svg>'}
+const VAL_MAX=Math.max(...DATA.flatMap(d=>d.cohort_values.map(c=>Math.max(c.ltv_p95||0,c.observed_value||0,c.cac||0))))*1.06;
+function valueChart(d){const W=640,H=250,L=48,R=10,T=10,B=44,w=W-L-R,h=H-T-B,bw=w/N,y=v=>T+h*(1-v/VAL_MAX);
+ let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="12-month value versus CAC by cohort">`;
+ for(let g=0;g<=4;g++){const v=VAL_MAX*g/4;s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#e8e5dc"/><text x="${L-6}" y="${y(v)+4}" font-size="10.5" text-anchor="end" fill="#5d6b6b">$${Math.round(v)}</text>`}
+ MONTHS.forEach((m,k)=>{if(k%3===0)s+=`<text x="${L+bw*(k+.5)}" y="${H-28}" font-size="10" text-anchor="middle" fill="#5d6b6b">${m}</text>`});
+ s+=`<text x="${L+w/2}" y="${H-8}" font-size="10.5" text-anchor="middle" fill="#5d6b6b">Joining cohort</text>`;
+ d.cohort_values.forEach(c=>{const k=MONTHS.indexOf(c.cohort),x0=L+bw*k+bw*.15,bwi=bw*.7,ov=c.observed_value;
+  s+=`<rect x="${x0}" y="${y(ov)}" width="${bwi}" height="${y(0)-y(ov)}" fill="#1b6e5a"><title>${c.cohort}: observed ${d0(ov)}</title></rect>`;
+  if(c.ltv!=null&&c.ltv>ov){s+=`<rect x="${x0}" y="${y(c.ltv)}" width="${bwi}" height="${y(ov)-y(c.ltv)}" fill="#cdb8e3" stroke="#7a4ea3" stroke-dasharray="2 2"><title>${c.cohort}: 12-month value ${d0(c.ltv)} (${pct(c.forecast_share)} forecast, 5-95%: ${d0(c.ltv_p05)}-${d0(c.ltv_p95)})</title></rect>`}
+  s+=`<line x1="${x0-2}" x2="${x0+bwi+2}" y1="${y(c.cac)}" y2="${y(c.cac)}" stroke="#222" stroke-width="2.5"><title>${c.cohort}: CAC ${d0(c.cac)}</title></line>`});
+ return s+'</svg>'}
+function render(){const d=DATA[i];$('label').textContent=d.month;$('slider').value=i;
+ const fit=d.fit.status==='fitted'?`Forecasts refitted on records through ${d.month} (max R-hat ${d.fit.max_r_hat.toFixed(3)}, ${d.fit.divergences} divergences).`:'Too little renewal history to fit the forecasting model, so forecasts are blank.';
+ $('status').textContent=`Only what was known by the end of ${d.month}: ${d.cohorts.length} joining cohort${d.cohorts.length>1?'s':''}. ${fit}`;
+ const last=d.company[d.company.length-1],latest=d.cohort_values[d.cohort_values.length-1];
+ const withV=d.cohort_values.filter(c=>c.ltv!=null),lv=withV[withV.length-1];
+ $('kpis').innerHTML=[[f0(last.members),'members paying in '+last.month],[d0(last.net_revenue),'net revenue in '+last.month],[d0(last.contribution),'contribution in '+last.month],
+  [d0(latest.cac),'CAC, '+latest.cohort+' cohort'],[lv?d0(lv.ltv):'n/a',lv?'12-month value, '+lv.cohort+(lv.forecast_share>0.001?' (forecast)':''):'no forecast yet'],
+  [lv&&lv.ltv_to_cac?lv.ltv_to_cac.toFixed(2)+'x':'n/a','value / CAC, '+(lv?lv.cohort:'')]].map(([v,l])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('');
+ $('company').innerHTML=companyChart(d);$('valuechart').innerHTML=valueChart(d);
+ $('retention').innerHTML=triangle(d.retention,d.cohorts,100,v=>Math.round(v));
+ const rmax=Math.max(...Object.values(FINAL.revenue).flat());$('revenue').innerHTML=triangle(d.revenue,d.cohorts,rmax,v=>Math.round(v));
+ let e='<table><tr><th>Cohort</th><th>Customers</th><th>CAC</th><th>Months observed</th><th>Value so far</th><th>12-month value</th><th>5%–95%</th><th>Forecast share</th><th>Value / CAC</th><th>12-month net revenue</th><th>Payback month</th></tr>';
+ for(const c of d.cohort_values){const full=c.observed_months>=12,k=full?'':'fc';
+  const pb=c.payback_month==null?'<span class="pill no">not yet</span>':`${c.payback_month} <span class="pill ${c.payback_status==='forecast'?'fcst':'ok'}">${c.payback_status==='forecast'?'forecast':'observed'}</span>`;
+  e+=`<tr><td>${c.cohort}</td><td>${c.n}</td><td>${f2(c.cac)}</td><td>${c.observed_months}</td><td>${f2(c.observed_value)}</td>`+
+  (c.ltv==null?'<td colspan="5" style="text-align:center;color:#5d6b6b">no forecast: too little history</td>':
+   `<td class="${k}">${f2(c.ltv)}</td><td class="${k}">${full?'':f2(c.ltv_p05)+' – '+f2(c.ltv_p95)}</td><td class="${k}">${pct(c.forecast_share)}</td><td class="${k}">${f2(c.ltv_to_cac)}</td><td class="${k}">${f2(c.revenue_12m)}</td>`)+`<td>${pb}</td></tr>`}
+ $('econ').innerHTML=e+'</table>';
+ let m='<table><tr><th>Cohort</th><th>Joined</th><th style="text-align:left">Mix</th></tr>';
+ for(const c of d.cohorts){const mix=d.mix[c],tot=SEGS.reduce((s,k)=>s+(mix[k]||0),0);
+  m+=`<tr><td>${c}</td><td>${tot}</td><td><div class="bar">`+SEGS.map(k=>`<span title="${k}: ${mix[k]||0} (${(100*(mix[k]||0)/tot).toFixed(0)}%)" style="width:${100*(mix[k]||0)/tot}%;background:${C[k]}"></span>`).join('')+'</div></td></tr>'}
+ $('mix').innerHTML=m+'</table>';
+ const dc=d.decision;
+ if(dc){let x=`<p>Benchmark: <b>${dc.benchmark}</b> cohort (latest with six observed months), valued at 12 months. Cost: each segment's latest completed holdout test (iCAC).</p><table><tr><th>Segment</th><th>12-month value</th><th>Forecast share</th><th>iCAC</th><th>iCAC 95% range</th><th>Test</th><th>Value − iCAC</th></tr>`;
+  for(const r of dc.rows)x+=`<tr><td><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${C[r.segment]}"></i> ${r.segment}</td><td class="fc">${f2(r.value)}</td><td class="fc">${pct(r.forecast_share)}</td><td>${f2(r.icac)}</td><td>${f0(r.lo)}–${f0(r.hi)}</td><td>${r.test_month}</td><td class="${r.margin<0?'neg':''}"><b>${f2(r.margin)}</b></td></tr>`;
+  x+='</table><p>'+(dc.supported?`<span class="pill ok">Supports the report's recommendation</span> Both build-skill segments clear their incremental cost and both save-time segments do not. Wider build-skill margin this month: <b>${dc.build_leader}</b>.`:'<span class="pill no">Does not match the recommendation this month</span>')+'</p>';$('decision').innerHTML=x}
+ else $('decision').innerHTML='<p>No acquisition decision can be checked yet. The first holdout tests finished at the end of July 2025; until then only attributed CAC exists, which counts buyers who would have joined anyway.</p>';}
+function staticPanels(){const a=META.answers,f=a.first,l=a.latest,lead=Object.entries(a.leaders);
+ $('answers').innerHTML=`<h2>Are we moving in the right direction?</h2>
+ <p><b>Yes: newer cohorts' economics improve as the months advance.</b> The ${f.cohort} cohort cost ${d0(f.cac)} per customer, kept ${a.ret6_first.toFixed(0)}% of customers at month 6, earned ${d0(f.ltv)} in 12-month value and paid back in receipt month ${f.payback_month}. The ${l.cohort} cohort cost ${d0(l.cac)}, kept ${a.ret6_latest.toFixed(0)}%, is valued at ${d0(l.ltv)} (${pct(l.forecast_share)} forecast) and paid back in month ${l.payback_month}. Value per dollar of CAC averages ${a.ratio_2024.toFixed(2)}x for 2024 cohorts and ${a.ratio_2025.toFixed(2)}x for 2025 cohorts. Step through the months to see the improvement build gradually from mid-2024.</p>
+ <p><b>When did the evidence first support the report's recommendation?</b> In <b>${a.first_supported}</b>, the first month with a completed holdout test: both build-skill segments cleared their incremental acquisition cost and both save-time segments did not.${a.always_since?' That held in every later month.':''} Which build-skill channel had the wider margin changed: ${lead.map(([m,s])=>m+' '+s.split('/')[0]).join(', ')}. That is why the report treats search and partner as roughly equal.</p>
+ <p class="note">Use ← → keys, the slider or Play. Hover chart bars for values.</p>`;
+ $('mixlegend').innerHTML=SEGS.map(k=>`<span><i style="background:${C[k]}"></i>${k}</span>`).join('');
+ let t=`<p>For cohorts with all twelve receipts observed by December 2025, each earlier month's forecast of their 12-month value is compared with what actually happened.</p><table><tr><th>Months observed when forecast</th><th>Forecasts</th><th>Mean abs. % error</th><th>Mean % error</th><th>Actual inside 5–95% band</th></tr>`;
+ for(const r of META.track)t+=`<tr><td>${r.observed_months}</td><td>${r.forecasts}</td><td>${r.mean_abs_pct_error.toFixed(1)}%</td><td>${r.mean_pct_error.toFixed(1)}%</td><td>${pct(r.share_inside_5_95_band)}</td></tr>`;
+ $('track').innerHTML=t+`</table><p class="note">The bands cover parameter uncertainty only (the report's definition), so actual values often fall outside them. Error shrinks as more months are observed.</p>`;
+ let c='<table><tr><th>December 2025 view versus the report</th><th>Cells</th><th>Max difference</th><th></th></tr>';
+ for(const r of META.reconciliation)c+=`<tr><td>${r.check}</td><td>${r.cells}</td><td>${r.max_abs_diff.toExponential(1)}</td><td><span class="pill ${r.match?'ok':'no'}">${r.match?'matches':'differs'}</span></td></tr>`;
+ c+='</table><ul class="note">';
+ c+=META.check?`<li><b>Cut-off check:</b> ${META.check.month} rebuilt from scratch from records cut off at that month: ${META.check.identical?'identical to the view shown here':'DIFFERENT from the view shown here'}.</li>`:'';
+ c+=`<li><b>How each month is built:</b> records dated after the month are removed, the release's own SQL is re-run, and the report's model (seed ${META.lock.model_seed}, ${META.lock.model_steps} steps) is refitted on that data alone. No parameter from a later fit is reused.</li><li><b>Source:</b> ${META.lock.repository} at ${META.lock.commit.slice(0,7)}; data manifest ${META.lock.data_manifest_sha256.slice(0,12)}….</li></ul>`;
+ $('checks').innerHTML=c}
+function init(){$('slider').max=N-1;staticPanels();
+ $('prev').onclick=()=>{i=Math.max(0,i-1);render()};$('next').onclick=()=>{i=Math.min(N-1,i+1);render()};$('slider').oninput=e=>{i=+e.target.value;render()};
+ $('play').onclick=()=>{if(timer){clearInterval(timer);timer=null;$('play').textContent='Play';return}if(i>=N-1)i=0;$('play').textContent='Pause';timer=setInterval(()=>{if(i>=N-1){clearInterval(timer);timer=null;$('play').textContent='Play';return}i++;render()},1100)};
+ document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')$('prev').click();if(e.key==='ArrowRight')$('next').click()});i=0;render()}
+init();
+</script></body></html>

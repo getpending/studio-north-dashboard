@@ -1,0 +1,17 @@
+[project]
+name = "studio-north-dashboard"
+version = "1.0.0"
+description = "Studio North customer economics replayed one month at a time, with each month's forecast refitted on that month's data only."
+requires-python = ">=3.12,<3.13"
+# Exact versions match the pinned Studio North release's uv.lock, so the final month reproduces the report.
+dependencies = [
+  "duckdb==2.0.0",
+  "numpy==2.5.4",
+  "pandas==2.3.3",
+  "scipy==1.18.1",
+  "jax[cpu]==0.12.0.1",
+  "numpyro==0.22.0",
+]
+
+[tool.uv]
+package = false

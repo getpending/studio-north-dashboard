@@ -1,0 +1,10 @@
+{
+  "repository": "longxiutian/customer-economics-lab",
+  "commit": "4848f4b75628bde8a43858bb54ca7c09de603f61",
+  "report_built_from_commit": "0e40ce3cd0b788a3914ca4eb9f90d58ae1b62903",
+  "note": "The baseline report was built from 0e40ce3, which is no longer on GitHub. 4848f4b has byte-identical data/, sql/01_views.sql, cohort_lab/model.py, analysis.py, data.py, pyproject.toml and uv.lock; the reconciliation check confirms the final month reproduces the report.",
+  "data_manifest_sha256": "557d88a88b0806e1e266a48c1b8f638e46d6eaa356447031b5c1fc132ecf1e43",
+  "dataset_version": "5.1",
+  "model_seed": 20261116,
+  "model_steps": 3000
+}
