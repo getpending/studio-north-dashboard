@@ -8,8 +8,10 @@ lets you step from January 2024 to December 2025 and see only what Studio North 
 of each month: cohort retention, revenue, 12-month contribution value (LTV), CAC and payback, with observed
 results kept visibly separate from forecasts.
 
-**Open the dashboard:** [`site/index.html`](site/index.html) (one self-contained file, no internet needed).
-Download it and open it in any browser.
+**Open the dashboard: https://getpending.github.io/studio-north-dashboard/site/**
+
+The same page is [`site/index.html`](site/index.html) in this repository: one self-contained file that also
+works offline if you download it and open it in a browser.
 
 ## Findings
 
